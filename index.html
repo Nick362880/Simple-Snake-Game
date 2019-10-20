@@ -1,18 +1,58 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Game</title>
+		<title>Simple Snake Game</title>
+		<meta charset="utf-8">
+		<link rel="icon" href="icon.png">
 		<script>
-			s = 20;
-			var ctx, pos = [0, 0], dir = [1, 0];
+			var ctx;
+			var fps = 5, last;
+			var c = { // control
+				tom: [0, 0], // tomove
+				pos: [[0, 0]],
+				gro: 0 // growth queue
+			};
+			var w = { // world
+				dim: 40, // x*x dimension
+				csz: 20 // cell size
+			}
 			window.onload = function() {
-				var canv = document.querySelector("canvas");
-				canvas.width = s * 40;
-				canvas.height = s * 40;
+				var canv = document.createElement("canvas");
+				document.body.appendChild(canv);
 				ctx = canv.getContext("2d");
-				window.onkey
+				canv.width = w.csz * w.dim;
+				canv.height = w.csz * w.dim;
+				window.onkeydown = function(e) {
+					switch (e.key) {
+						case "w":
+							if (c.tom[1] == 0)
+								c.tom = [0, 1];
+							break;
+						case "a":
+							if (c.tom[0] == 0)
+								c.tom = [-1, 0];
+							break;
+						case "s":
+							if (c.tom[1] == 0)
+								c.tom = [0, -1];
+							break;
+						case "d":
+							if (c.tom[0] == 0)
+								c.tom = [1, 0];
+							break;
+					}
+				}
+				last = Date.now();
+				window.requestAnimationFrame(main);
+			}
+			function main() {
+				if ((Date.now() - last) / 1000)) {
+					console.log("ye");
+					last = Date.now();
+				}
+				window.requestAnimationFrame(main);
 			}
 		</script>
 	</head>
-	<body><canvas></canvas></body>
+	<body></body>
 </html>
