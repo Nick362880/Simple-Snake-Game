@@ -6,17 +6,20 @@
 		<link rel="icon" href="icon.png">
 		<script>
 			var ctx;
-			var fps = 2, last, residue;
+			var fps = 12, last, residue;
 			var isdankmode = false;
 			var c = { // control
 				tom: [1, 0], // tomove
 				pos: [[0, 0]],
 				gro: 0, // growth queue
-				hch: false // has changed dir
+				gra: 2, // growth amount
+				hch: false, // has changed dir
+				fpo: [null, null] // food pos
 			};
 			var w = { // world
 				dim: 28, // x*x dimension
-				csz: 20 // cell size
+				csz: 20, // cell size
+				sco: 0 // score
 			}
 			window.onload = function() {
 				var canv = document.createElement("canvas");
@@ -25,7 +28,6 @@
 				canv.width = w.csz * w.dim;
 				canv.height = w.csz * w.dim;
 				window.onkeydown = function(e) {
-					console.log(c.pos.length);
 					switch (e.key) {
 						case "ArrowUp":
 						case "w":
@@ -67,6 +69,7 @@
 				content.style.height = w.csz * w.dim + "px";
 				content.style.backgroundColor = "red";
 				content.style.border = "1px solid #000";
+				content.style.boxShadow = "0px 0px 16px #303030";
 				document.body.appendChild(content);
 				for (var i = 0; i < w.dim * w.dim; i++) {
 					var d = document.createElement("div");
@@ -81,6 +84,29 @@
 				}
 				// debug("raw px margin-left content", window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz));
 				
+				var food = document.createElement("div");
+				food.setAttribute("id", "food");
+				food.style.position = "absolute";
+				food.style.left = "50%";
+				food.style.marginLeft = "-" + ((w.csz * w.dim) / 2) + "px";
+				food.style.top = 1 + w.csz + "px";
+				food.style.width = w.csz * w.dim + "px";
+				food.style.height = w.csz * w.dim + "px";
+				document.body.appendChild(food);
+				
+				// Initial food update and render
+				c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+				var fd = document.createElement("div");
+				fd.style.position = "absolute";
+				fd.style.left = (c.fpo[0] * w.csz) + "px";
+				fd.style.top = (c.fpo[1] * w.csz) + "px";
+				fd.style.width = w.csz + "px";
+				fd.style.height = w.csz + "px";
+				fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
+				fd.style.borderRadius = "50%";
+				fd.style.boxShadow = "0px 0px 16px #303030";
+				food.appendChild(fd);
+				
 				var snek = document.createElement("div");
 				snek.setAttribute("id", "snek");
 				snek.style.position = "absolute";
@@ -90,23 +116,22 @@
 				snek.style.width = w.csz * w.dim + "px";
 				snek.style.height = w.csz * w.dim + "px";
 				// snek.style.backgroundColor = "red";
-				document.body.appendChild(snek);
+				document.body.appendChild(snek);				
 				
-				// Initial render
-				sd = document.createElement("div");
+				// Initial snake render
+				var sd = document.createElement("div");
 				sd.style.position = "absolute";
 				sd.style.left = (c.pos[c.pos.length - 1][0] * w.csz) + "px";
 				sd.style.top = (c.pos[c.pos.length - 1][1] * w.csz) + "px";
 				sd.style.width = w.csz + "px";
 				sd.style.height = w.csz + "px";
 				sd.style.backgroundColor = "#000";
-				snek = document.getElementById("snek");
 				snek.appendChild(sd);
 				
 				document.getElementById("darkmodebutton").style.top = (w.csz + 1) + "px";
-				document.getElementById("darkmodebutton").style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 81) + "px";
+				document.getElementById("darkmodebutton").style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
 				window.onresize = function() {
-					document.getElementById("darkmodebutton").style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 81) + "px";
+					document.getElementById("darkmodebutton").style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
 				}
 				residue = 0;
 				last = Date.now();
@@ -119,15 +144,38 @@
 					last = Date.now();					
 					// debug("timeError", Date.now() % 1000 + " " + residue);
 					
+					haschanged = false;
 					// Update
+					// Checks for predicted collision with food
+					if (c.pos[c.pos.length - 1][0] + c.tom[0] == c.fpo[0] && c.pos[c.pos.length - 1][1] + c.tom[1] == c.fpo[1]) {
+						w.sco += c.gra;
+						c.gro += c.gra;
+						// New food
+						c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+						var fd = document.createElement("div");
+						fd.style.position = "absolute";
+						fd.style.left = (c.fpo[0] * w.csz) + "px";
+						fd.style.top = (c.fpo[1] * w.csz) + "px";
+						fd.style.width = w.csz + "px";
+						fd.style.height = w.csz + "px";
+						fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
+						fd.style.borderRadius = "50%";
+						fd.style.boxShadow = "0px 0px 16px #303030";
+						var food = document.getElementById("food");
+						food.appendChild(fd);
+						food.removeChild(food.querySelector("div"));
+					}
+					
+					// Applies movement on whole segment
 					c.pos.push([c.pos[c.pos.length - 1][0] + c.tom[0], c.pos[c.pos.length - 1][1] + c.tom[1]]);
 					for (var i = 0; i < c.pos.length - 1; i++) {
 						c.pos[i] = [c.pos[i + 1][0], [c.pos[i + 1][1]]];
 					}
-					c.pos.shift();
-					haschanged = false;
+					
+					// Growth handling below (requires update and render)
+					
 					// Render
-					sd = document.createElement("div");
+					var sd = document.createElement("div");
 					sd.style.position = "absolute";
 					sd.style.left = (c.pos[c.pos.length - 1][0] * w.csz) + "px";
 					sd.style.top = (c.pos[c.pos.length - 1][1] * w.csz) + "px";
@@ -136,7 +184,14 @@
 					sd.style.backgroundColor = "#000";
 					snek = document.getElementById("snek");
 					snek.appendChild(sd);
-					snek.removeChild(snek.querySelector("div"));
+					
+					// Removes trailing segment if c.gro not in effect, otherwise decrementes c.gro
+					if (c.gro >= 1) {
+						c.gro--;
+					} else {
+						c.pos.shift();
+						snek.removeChild(snek.querySelector("div"));
+					}
 				}
 				window.requestAnimationFrame(main);
 			}
