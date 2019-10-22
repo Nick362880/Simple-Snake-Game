@@ -19,7 +19,8 @@
 			var w = { // world
 				dim: 28, // x*x dimension
 				csz: 20, // cell size
-				sco: 0 // score
+				sco: 0, // score
+				pau: false // paused
 			}
 			window.onload = function() {
 				var canv = document.createElement("canvas");
@@ -59,6 +60,9 @@
 							break;
 					}
 				}
+				window.onblur = function() {
+					pause();
+				}
 				var content = document.createElement("div");
 				content.setAttribute("id", "content");
 				content.style.position = "absolute";
@@ -94,8 +98,10 @@
 				food.style.height = w.csz * w.dim + "px";
 				document.body.appendChild(food);
 				
-				// Initial food update and render
-				c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+				// Initial food update (not pos[0, 0]) and render
+				while (!(c.fpo[0] || c.fpo[1])) {
+					c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+				}
 				var fd = document.createElement("div");
 				fd.style.position = "absolute";
 				fd.style.left = (c.fpo[0] * w.csz) + "px";
@@ -105,6 +111,7 @@
 				fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
 				fd.style.borderRadius = "50%";
 				fd.style.boxShadow = "0px 0px 16px #303030";
+				fd.style.zIndex = "99";
 				food.appendChild(fd);
 				
 				var snek = document.createElement("div");
@@ -126,20 +133,27 @@
 				sd.style.width = w.csz + "px";
 				sd.style.height = w.csz + "px";
 				sd.style.backgroundColor = "#000";
+				sd.style.boxShadow = "0px 0px 16px #303030";
 				snek.appendChild(sd);
 				
-				document.getElementById("darkmodebutton").style.top = (w.csz + 1) + "px";
-				document.getElementById("darkmodebutton").style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+				var dmb = document.getElementById("darkmodebutton");
+				dmb.style.top = (w.csz + 1) + "px";
+				dmb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+				var pb = document.getElementById("pausebutton");
+				pb.style.top = (w.csz + 1) + 46 + "px";
+				pb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
 				window.onresize = function() {
-					document.getElementById("darkmodebutton").style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
-				}
+					dmb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+					pb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+				}	
+				
 				residue = 0;
 				last = Date.now();
 				window.requestAnimationFrame(main);
 			}
 			function main() {
 				elap = Date.now() - last;
-				if (elap + residue >= 1000 / fps) {
+				if (elap + residue >= 1000 / fps && !w.pau) {
 					residue = elap + residue - 1000 / fps;
 					last = Date.now();					
 					// debug("timeError", Date.now() % 1000 + " " + residue);
@@ -182,6 +196,7 @@
 					sd.style.width = w.csz + "px";
 					sd.style.height = w.csz + "px";
 					sd.style.backgroundColor = "#000";
+					sd.style.boxShadow = "0px 0px 16px #303030";
 					snek = document.getElementById("snek");
 					snek.appendChild(sd);
 					
@@ -203,14 +218,22 @@
 				if (isdankmode) {
 					document.body.style.backgroundColor = "#000";
 					document.getElementById("content").style.border = "1px solid #FFF";
+					document.getElementById("darkmodebutton").value = "Light Mode";
 				} else {
 					document.body.style.backgroundColor = "#FFF";
 					document.getElementById("content").style.border = "1px solid #000";
+					document.getElementById("darkmodebutton").value = "Dark Mode";
 				}
+			}
+			function pause() {
+				if (w.pau)
+					last = Date.now() - 1000 / fps;
+				w.pau = !w.pau;
 			}
 		</script>
 	</head>
 	<body>
-		<input type="button" id="darkmodebutton" value="Dark Mode" style="position: absolute; padding: 0; width: 74px; height: 30px; text-align: center; border: 1px solid black; opacity: 0.5;" onclick="toggledarkmode()">
+		<input type="button" id="darkmodebutton" value="Dark Mode" style="position: absolute; padding: 0; width: 74px; height: 30px; text-align: center; border: 1px solid black; opacity: 0.6; box-shadow: 0px 0px 16px #303030" onclick="toggledarkmode()">
+		<input type="button" id="pausebutton" value="Pause" style="position: absolute; padding: 0; width: 74px; height: 30px; text-align: center; border: 1px solid black; opacity: 0.5; box-shadow: 0px 0px 16px #303030" onclick="pause()">
 	</body>
 </html>
