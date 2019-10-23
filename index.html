@@ -29,6 +29,10 @@
 				canv.width = w.csz * w.dim;
 				canv.height = w.csz * w.dim;
 				window.onkeydown = function(e) {
+					if (w.pau && e.key != " ")
+						unpause();
+					if (!w.pau && e.key == " ")
+						pause();
 					switch (e.key) {
 						case "ArrowUp":
 						case "w":
@@ -111,7 +115,6 @@
 				fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
 				fd.style.borderRadius = "50%";
 				fd.style.boxShadow = "0px 0px 16px #303030";
-				fd.style.zIndex = "99";
 				food.appendChild(fd);
 				
 				var snek = document.createElement("div");
@@ -153,9 +156,9 @@
 			}
 			function main() {
 				elap = Date.now() - last;
-				if (elap + residue >= 1000 / fps && !w.pau) {
+				if (elap + residue >= 1000 / fps) {
 					residue = elap + residue - 1000 / fps;
-					last = Date.now();					
+					last = Date.now();
 					// debug("timeError", Date.now() % 1000 + " " + residue);
 					
 					haschanged = false;
@@ -208,7 +211,8 @@
 						snek.removeChild(snek.querySelector("div"));
 					}
 				}
-				window.requestAnimationFrame(main);
+				if (!w.pau)
+					window.requestAnimationFrame(main);
 			}
 			function debug(head, value) {
 				console.log("debug " + head + ": " + value);
@@ -226,9 +230,44 @@
 				}
 			}
 			function pause() {
-				if (w.pau)
-					last = Date.now() - 1000 / fps;
-				w.pau = !w.pau;
+				if (!w.pau) {
+					w.pau = true;
+					var ps = document.createElement("div");
+					ps.setAttribute("id", "pausescreen");
+					ps.style.position = "absolute";
+					ps.style.left = "0px";
+					ps.style.top = "0px";
+					ps.style.width = "100%";
+					ps.style.height = "100%";
+					ps.style.backgroundColor = "rgba(51, 51, 51, 0.75)";
+					ps.onclick = function() {
+						unpause();
+					}
+					document.body.appendChild(ps);
+					var b1 = document.createElement("div");
+					b1.style.position = "absolute";
+					b1.style.left = window.innerWidth - (window.innerWidth / 2 + 58 + 16) + "px";
+					b1.style.top = window.innerHeight / 2 - 77 + "px";
+					b1.style.width = "58px";
+					b1.style.height = "154px";
+					b1.style.backgroundColor = "rgba(204, 204, 204, 0.75)";
+					ps.appendChild(b1);
+					var b2 = document.createElement("div");
+					b2.style.position = "absolute";
+					b2.style.left = window.innerWidth - (window.innerWidth / 2 - 16) + "px";
+					b2.style.top = window.innerHeight / 2 - 77 + "px";
+					b2.style.width = "58px";
+					b2.style.height = "154px";
+					b2.style.backgroundColor = "rgba(204, 204, 204, 0.75)";
+					ps.appendChild(b2);
+				}
+			}
+			function unpause() {
+				document.body.removeChild(document.getElementById("pausescreen"));
+				w.pau = false;
+				last = Date.now() - 1000 / fps;
+				residue = 0;
+				window.requestAnimationFrame(main);
 			}
 		</script>
 	</head>
