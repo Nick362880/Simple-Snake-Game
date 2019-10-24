@@ -3,22 +3,34 @@
 	<head>
 		<title>Simple Snake Game</title>
 		<meta charset="utf-8">
+		<meta name="description" content="Compete for the leaderboard in this free Snake game!">
+		<meta name="author" content="Nick G (github.com/Nick362880)">
 		<link rel="icon" href="icon.png">
+		<style>
+			@keyframes fadein {
+				from {opacity: 0;}
+				to {opacity: 1;}
+			}
+			#goscreen {
+				animation: fadein 2s;
+			}
+		</style>
 		<script>
 			var ctx;
-			var fps = 12, last, residue;
+			var fps = 1, last, residue;
 			var isdankmode = false;
 			var c = { // control
 				tom: [1, 0], // tomove
 				pos: [[0, 0]],
 				gro: 0, // growth queue
-				gra: 2, // growth amount
-				hch: false, // has changed dir
-				fpo: [null, null] // food pos
+				gra: 1, // growth amount
+				// hch: false, // has changed dir
+				fpo: [null, null], // food pos
+				iss: false // is screen (g.o., win)
 			};
 			var w = { // world
-				dim: 28, // x*x dimension
-				csz: 20, // cell size
+				dim: 2, // x*x dimension
+				csz: 28, // cell size
 				sco: 0, // score
 				pau: false // paused
 			}
@@ -29,43 +41,58 @@
 				canv.width = w.csz * w.dim;
 				canv.height = w.csz * w.dim;
 				window.onkeydown = function(e) {
-					if (w.pau && e.key != " ")
+					if (w.pau && (e.key == "w" || e.key == "ArrowUp" || e.key == "a"|| e.key == "ArrowLeft" ||  e.key == "s" || e.key == "ArrowDown" ||  e.key == "d" || e.key == "ArrowRight"))
 						unpause();
-					if (!w.pau && e.key == " ")
+					if (!w.pau && e.key == " " && !c.iss)
 						pause();
+					if (e.key == "m" && !c.iss)
+						toggledarkmode();
 					switch (e.key) {
 						case "ArrowUp":
 						case "w":
-							if ((c.tom[1] == 0 || c.pos.length == 1) && !haschanged) {
-								c.tom = [0, -1];
-								haschanged = true;
+							if ((c.tom[1] == 0 || c.pos.length == 1) /* && !c.hch */) {
+								if (!c.iss)
+									c.tom = [0, -1];
+								else
+									newgame();
+								// c.hch = true;
 							}
 							break;
 						case "ArrowLeft":
 						case "a":
-							if ((c.tom[0] == 0 || c.pos.length == 1) && !haschanged) {
-								c.tom = [-1, 0];
-								haschanged = true;
+							if ((c.tom[0] == 0 || c.pos.length == 1) /* && !c.hch */) {
+								if (!c.iss)
+									c.tom = [-1, 0];
+								else
+									newgame();
+								// c.hch = true;
 							}
 							break;
 						case "ArrowDown":
 						case "s":
-							if ((c.tom[1] == 0 || c.pos.length == 1) && !haschanged) {
-								c.tom = [0, 1];
-								haschanged = true;
+							if ((c.tom[1] == 0 || c.pos.length == 1) /* && !c.hch */) {
+								if (!c.iss)
+									c.tom = [0, 1];
+								else
+									newgame();
+								// c.hch = true;
 							}
 							break;
 						case "ArrowRight":
 						case "d":
-							if ((c.tom[0] == 0 || c.pos.length == 1) && !haschanged) {
-								c.tom = [1, 0];
-								haschanged = true;
+							if ((c.tom[0] == 0 || c.pos.length == 1) /* && !c.hch */) {
+								if (!c.iss)
+									c.tom = [1, 0];
+								else
+									newgame();
+								// c.hch = true;
 							}
 							break;
 					}
 				}
 				window.onblur = function() {
-					pause();
+					if (!w.iss)
+						pause();
 				}
 				var content = document.createElement("div");
 				content.setAttribute("id", "content");
@@ -96,7 +123,7 @@
 				food.setAttribute("id", "food");
 				food.style.position = "absolute";
 				food.style.left = "50%";
-				food.style.marginLeft = "-" + ((w.csz * w.dim) / 2) + "px";
+				food.style.marginLeft = "-" + ((w.csz * w.dim) / 2 - 1) + "px";
 				food.style.top = 1 + w.csz + "px";
 				food.style.width = w.csz * w.dim + "px";
 				food.style.height = w.csz * w.dim + "px";
@@ -114,19 +141,19 @@
 				fd.style.height = w.csz + "px";
 				fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
 				fd.style.borderRadius = "50%";
-				fd.style.boxShadow = "0px 0px 16px #303030";
+				fd.style.boxShadow = "0px 0px 16px #000";
 				food.appendChild(fd);
 				
 				var snek = document.createElement("div");
 				snek.setAttribute("id", "snek");
 				snek.style.position = "absolute";
 				snek.style.left = "50%";
-				snek.style.marginLeft = "-" + ((w.csz * w.dim) / 2) + "px";
+				snek.style.marginLeft = "-" + ((w.csz * w.dim) / 2 - 1) + "px";
 				snek.style.top = 1 + w.csz + "px";
 				snek.style.width = w.csz * w.dim + "px";
 				snek.style.height = w.csz * w.dim + "px";
 				// snek.style.backgroundColor = "red";
-				document.body.appendChild(snek);				
+				document.body.appendChild(snek);
 				
 				// Initial snake render
 				var sd = document.createElement("div");
@@ -136,19 +163,24 @@
 				sd.style.width = w.csz + "px";
 				sd.style.height = w.csz + "px";
 				sd.style.backgroundColor = "#000";
-				sd.style.boxShadow = "0px 0px 16px #303030";
+				sd.style.boxShadow = "0px 0px 16px #000";
 				snek.appendChild(sd);
 				
 				var dmb = document.getElementById("darkmodebutton");
 				dmb.style.top = (w.csz + 1) + "px";
 				dmb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
 				var pb = document.getElementById("pausebutton");
-				pb.style.top = (w.csz + 1) + 46 + "px";
+				pb.style.top = (w.csz + 1) + 40 + "px";
 				pb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+				var scd = document.getElementById("scorewrapper");
+				scd.style.top = (w.csz + 1) + 78 + "px";
+				scd.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+				scd.querySelector("p").innerHTML = "Score: 0";
 				window.onresize = function() {
 					dmb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
 					pb.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
-				}	
+					scd.style.left = ((window.innerWidth / 2 - (1 + (w.dim / 2) * w.csz)) - 103) + "px";
+				}
 				
 				residue = 0;
 				last = Date.now();
@@ -161,14 +193,36 @@
 					last = Date.now();
 					// debug("timeError", Date.now() % 1000 + " " + residue);
 					
-					haschanged = false;
+					// c.hch = false;
 					// Update
+										
+					var predpos = c.pos.concat([[c.pos[c.pos.length - 1][0] + c.tom[0], c.pos[c.pos.length - 1][1] + c.tom[1]]]);
+					
 					// Checks for predicted collision with food
 					if (c.pos[c.pos.length - 1][0] + c.tom[0] == c.fpo[0] && c.pos[c.pos.length - 1][1] + c.tom[1] == c.fpo[1]) {
-						w.sco += c.gra;
 						c.gro += c.gra;
+						// Checks for win
+						if (c.pos.length == w.dim * w.dim - 1) {
+							var food = document.getElementById("food");
+							food.removeChild(food.querySelector("div"));
+							var sd = document.createElement("div");
+							sd.style.position = "absolute";
+							sd.style.left = ((c.pos[c.pos.length - 1][0] + c.tom[0]) * w.csz) + "px";
+							sd.style.top = ((c.pos[c.pos.length - 1][1] + c.tom[1]) * w.csz) + "px";
+							sd.style.width = w.csz + "px";
+							sd.style.height = w.csz + "px";
+							sd.style.backgroundColor = "#000";
+							sd.style.boxShadow = "0px 0px 16px #000";
+							snek = document.getElementById("snek");
+							snek.appendChild(sd);
+							
+							
+							return;
+						}
 						// New food
-						c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+						do {
+							c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+						} while (predpos.some(function(e) {return (e[0] == c.fpo[0] && e[1] == c.fpo[1]);}));
 						var fd = document.createElement("div");
 						fd.style.position = "absolute";
 						fd.style.left = (c.fpo[0] * w.csz) + "px";
@@ -177,17 +231,49 @@
 						fd.style.height = w.csz + "px";
 						fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
 						fd.style.borderRadius = "50%";
-						fd.style.boxShadow = "0px 0px 16px #303030";
+						fd.style.boxShadow = "0px 0px 16px #000";
 						var food = document.getElementById("food");
 						food.appendChild(fd);
 						food.removeChild(food.querySelector("div"));
 					}
 					
+					// Checks for predicted collision will wall || predicted collision with self
+					// console.log(c.pos.slice(1, c.pos.length - 1));
+					if ((c.pos[c.pos.length - 1][0] + c.tom[0] >= w.dim || c.pos[c.pos.length - 1][0] + c.tom[0] < 0 || c.pos[c.pos.length - 1][1] + c.tom[1] >= w.dim || c.pos[c.pos.length - 1][1] + c.tom[1] < 0) || (c.pos.slice(1, c.pos.length).some(function(e) {return (e[0] == c.pos[c.pos.length - 1][0] + c.tom[0] && e[1] == c.pos[c.pos.length - 1][1] + c.tom[1]);}))) {
+						c.iss = true;
+						var gos = document.createElement("div");
+						gos.setAttribute("id", "goscreen");
+						gos.style.position = "absolute";
+						gos.style.left = "0px";
+						gos.style.top = "0px";
+						gos.style.width = "100%";
+						gos.style.height = "100%";
+						gos.style.backgroundColor = "rgba(51, 51, 51, 0.75)";
+						gos.style.textAlign = "center";
+						gos.style.color = "rgba(204, 204, 204, 0.75)";
+						gos.style.fontFamily = "sans-serif";
+						gos.onclick = function() {
+							newgame();
+						}
+						document.body.appendChild(gos);
+						var sch = document.createElement("h1");
+						sch.style.marginTop = "200px";
+						sch.style.marginBottom = "-12px";
+						sch.style.fontSize = "58px";
+						sch.innerHTML = "You've died!";
+						gos.appendChild(sch);
+						var sci = document.createElement("p");
+						sci.style.fontSize = "18px";
+						sci.innerHTML = "Score: " + w.sco;
+						gos.appendChild(sci);
+						return;
+					}
+					
 					// Applies movement on whole segment
 					c.pos.push([c.pos[c.pos.length - 1][0] + c.tom[0], c.pos[c.pos.length - 1][1] + c.tom[1]]);
-					for (var i = 0; i < c.pos.length - 1; i++) {
-						c.pos[i] = [c.pos[i + 1][0], [c.pos[i + 1][1]]];
-					}
+					/* for (var i = 0; i < c.pos.length - 1; i++) {
+						c.pos[i] = [c.pos[i + 1][0], c.pos[i + 1][1]];
+					} */ // For changing color segments (WIP)
 					
 					// Growth handling below (requires update and render)
 					
@@ -199,13 +285,15 @@
 					sd.style.width = w.csz + "px";
 					sd.style.height = w.csz + "px";
 					sd.style.backgroundColor = "#000";
-					sd.style.boxShadow = "0px 0px 16px #303030";
+					sd.style.boxShadow = "0px 0px 16px #000";
 					snek = document.getElementById("snek");
 					snek.appendChild(sd);
 					
-					// Removes trailing segment if c.gro not in effect, otherwise decrementes c.gro
+					// Removes trailing segment if c.gro not in effect, otherwise decrements c.gro
 					if (c.gro >= 1) {
 						c.gro--;
+						w.sco++;
+						document.getElementById("scorewrapper").querySelector("p").innerHTML = "Score: " + (c.pos.length - 1);
 					} else {
 						c.pos.shift();
 						snek.removeChild(snek.querySelector("div"));
@@ -214,9 +302,12 @@
 				if (!w.pau)
 					window.requestAnimationFrame(main);
 			}
-			function debug(head, value) {
-				console.log("debug " + head + ": " + value);
+			function newgame() {
+				console.log("yeyehyehyeh");
 			}
+			/* function debug(head, value) {
+				console.log("debug " + head + ": " + value);
+			} */
 			function toggledarkmode() {
 				isdankmode = !isdankmode;
 				if (isdankmode) {
@@ -265,8 +356,7 @@
 			function unpause() {
 				document.body.removeChild(document.getElementById("pausescreen"));
 				w.pau = false;
-				last = Date.now() - 1000 / fps;
-				residue = 0;
+				last = Date.now();
 				window.requestAnimationFrame(main);
 			}
 		</script>
@@ -274,5 +364,6 @@
 	<body>
 		<input type="button" id="darkmodebutton" value="Dark Mode" style="position: absolute; padding: 0; width: 74px; height: 30px; text-align: center; border: 1px solid black; opacity: 0.6; box-shadow: 0px 0px 16px #303030" onclick="toggledarkmode()">
 		<input type="button" id="pausebutton" value="Pause" style="position: absolute; padding: 0; width: 74px; height: 30px; text-align: center; border: 1px solid black; opacity: 0.5; box-shadow: 0px 0px 16px #303030" onclick="pause()">
+		<div id="scorewrapper" style="position: absolute; padding-left: 4px; width: 74px; height: 30px; text-align: left; line-height: 0; color: #707070; font-family: sans-serif; font-size: 14px;"><p></p></div>
 	</body>
 </html>
