@@ -17,22 +17,23 @@
 		</style>
 		<script>
 			var ctx;
-			var fps = 2, last, residue;
+			var fps = 6, last, residue;
 			var c = { // control
 				tom: [1, 0], // tomove
 				pos: [[0, 0]],
 				gro: 0, // growth queue
-				gra: 1, // growth amount
-				// hch: false, // has changed dir
+				gra: 2.5, // growth amount
+				hch: false, // has changed dir
 				fpo: [null, null], // food pos
 			};
 			var w = { // world
-				dim: 4, // x*x dimension
-				csz: 28, // cell size
+				dim: 14, // x*x dimension
+				csz: 40, // cell size
 				sco: 0, // score
 				idm: false, // isdankmode
 				pau: false, // paused
-				iss: false // screen
+				iss: false, // screen
+				css: false // can cleargame()
 			}
 			window.onload = function() {
 				window.onkeydown = function(e) {
@@ -45,42 +46,42 @@
 					switch (e.key) {
 						case "ArrowUp":
 						case "w":
-							if ((c.tom[1] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!w.iss)
+							if ((c.tom[1] == 0 || c.pos.length == 1)) {
+								if (!w.iss && !c.hch)
 									c.tom = [0, -1];
-								else
+								if (w.iss && w.css)
 									cleargame();
-								// c.hch = true;
+								c.hch = true;
 							}
 							break;
 						case "ArrowLeft":
 						case "a":
-							if ((c.tom[0] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!w.iss)
+							if ((c.tom[0] == 0 || c.pos.length == 1)) {
+								if (!w.iss && !c.hch)
 									c.tom = [-1, 0];
-								else
+								if (w.iss && w.css)
 									cleargame();
-								// c.hch = true;
+								c.hch = true;
 							}
 							break;
 						case "ArrowDown":
 						case "s":
-							if ((c.tom[1] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!w.iss)
+							if ((c.tom[1] == 0 || c.pos.length == 1)) {
+								if (!w.iss && !c.hch)
 									c.tom = [0, 1];
-								else
+								if (w.iss && w.css)
 									cleargame();
-								// c.hch = true;
+								c.hch = true;
 							}
 							break;
 						case "ArrowRight":
 						case "d":
-							if ((c.tom[0] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!w.iss)
+							if ((c.tom[0] == 0 || c.pos.length == 1)) {
+								if (!w.iss && !c.hch)
 									c.tom = [1, 0];
-								else
+								if (w.iss && w.css)
 									cleargame();
-								// c.hch = true;
+								c.hch = true;
 							}
 							break;
 					}
@@ -159,6 +160,7 @@
 				sd.style.height = w.csz + "px";
 				sd.style.backgroundColor = "#000";
 				sd.style.boxShadow = "0px 0px 16px #000";
+				sd.style.borderRadius = "8px";
 				snek.appendChild(sd);
 				
 				var dmb = document.getElementById("darkmodebutton");
@@ -188,7 +190,7 @@
 					last = Date.now();
 					// debug("timeError", Date.now() % 1000 + " " + residue);
 					
-					// c.hch = false;
+					c.hch = false;
 					// Update
 					
 					var predpos = c.pos.concat([[c.pos[c.pos.length - 1][0] + c.tom[0], c.pos[c.pos.length - 1][1] + c.tom[1]]]);
@@ -208,12 +210,14 @@
 							sd.style.height = w.csz + "px";
 							sd.style.backgroundColor = "#000";
 							sd.style.boxShadow = "0px 0px 16px #000";
+							sd.style.borderRadius = "8px";
 							snek = document.getElementById("snek");
 							snek.appendChild(sd);
 							
 							w.sco += 1 + Math.floor((w.sco + 1) / 5);
 							document.getElementById("scorewrapper").querySelector("p").innerHTML = "Score: " + (w.sco);
 							w.iss = true;
+							setTimeout(function() {w.css = true}, 2000);
 							var ws = document.createElement("div");
 							ws.setAttribute("id", "wscreen");
 							ws.style.position = "absolute";
@@ -226,7 +230,8 @@
 							ws.style.color = "rgba(204, 204, 204, 0.75)";
 							ws.style.fontFamily = "sans-serif";
 							ws.onclick = function() {
-								cleargame();
+								if (w.css)
+									cleargame();
 							}
 							document.body.appendChild(ws);
 							var sch = document.createElement("h1");
@@ -263,6 +268,7 @@
 					// console.log(c.pos.slice(1, c.pos.length - 1));
 					if ((c.pos[c.pos.length - 1][0] + c.tom[0] >= w.dim || c.pos[c.pos.length - 1][0] + c.tom[0] < 0 || c.pos[c.pos.length - 1][1] + c.tom[1] >= w.dim || c.pos[c.pos.length - 1][1] + c.tom[1] < 0) || (c.pos.slice(1, c.pos.length).some(function(e) {return (e[0] == c.pos[c.pos.length - 1][0] + c.tom[0] && e[1] == c.pos[c.pos.length - 1][1] + c.tom[1]);}))) {
 						w.iss = true;
+						setTimeout(function() {w.css = true}, 2000);
 						var gos = document.createElement("div");
 						gos.setAttribute("id", "goscreen");
 						gos.style.position = "absolute";
@@ -275,7 +281,8 @@
 						gos.style.color = "rgba(204, 204, 204, 0.75)";
 						gos.style.fontFamily = "sans-serif";
 						gos.onclick = function() {
-							cleargame();
+							if (w.css)
+								cleargame();
 						}
 						document.body.appendChild(gos);
 						var sch = document.createElement("h1");
@@ -308,6 +315,7 @@
 					sd.style.height = w.csz + "px";
 					sd.style.backgroundColor = "#000";
 					sd.style.boxShadow = "0px 0px 16px #000";
+					sd.style.borderRadius = "8px";
 					snek = document.getElementById("snek");
 					snek.appendChild(sd);
 					
@@ -332,8 +340,10 @@
 				c.tom = [1, 0];
 				c.pos = [[0, 0]];
 				c.gro = 0;
+				c.hch = false;
 				w.sco = 0;
 				w.iss = false;
+				w.css = false;
 				
 				document.body.removeChild(document.getElementById("food"));
 				document.body.removeChild(document.getElementById("snek"));
@@ -383,7 +393,10 @@
 				sd.style.height = w.csz + "px";
 				sd.style.backgroundColor = "#000";
 				sd.style.boxShadow = "0px 0px 16px #000";
+				sd.style.borderRadius = "8px";
 				snek.appendChild(sd);
+				
+				document.getElementById("scorewrapper").querySelector("p").innerHTML = "Score: 0";
 				
 				residue = 0;
 				last = Date.now();
