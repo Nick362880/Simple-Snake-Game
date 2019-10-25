@@ -11,14 +11,13 @@
 				from {opacity: 0;}
 				to {opacity: 1;}
 			}
-			#goscreen {
+			#goscreen, #wscreen {
 				animation: fadein 2s;
 			}
 		</style>
 		<script>
 			var ctx;
-			var fps = 1, last, residue;
-			var isdankmode = false;
+			var fps = 2, last, residue;
 			var c = { // control
 				tom: [1, 0], // tomove
 				pos: [[0, 0]],
@@ -26,65 +25,61 @@
 				gra: 1, // growth amount
 				// hch: false, // has changed dir
 				fpo: [null, null], // food pos
-				iss: false // is screen (g.o., win)
 			};
 			var w = { // world
-				dim: 2, // x*x dimension
+				dim: 4, // x*x dimension
 				csz: 28, // cell size
 				sco: 0, // score
-				pau: false // paused
+				idm: false, // isdankmode
+				pau: false, // paused
+				iss: false // screen
 			}
 			window.onload = function() {
-				var canv = document.createElement("canvas");
-				document.body.appendChild(canv);
-				ctx = canv.getContext("2d");
-				canv.width = w.csz * w.dim;
-				canv.height = w.csz * w.dim;
 				window.onkeydown = function(e) {
 					if (w.pau && (e.key == "w" || e.key == "ArrowUp" || e.key == "a"|| e.key == "ArrowLeft" ||  e.key == "s" || e.key == "ArrowDown" ||  e.key == "d" || e.key == "ArrowRight"))
 						unpause();
-					if (!w.pau && e.key == " " && !c.iss)
+					if (!w.pau && e.key == " " && !w.iss)
 						pause();
-					if (e.key == "m" && !c.iss)
+					if (e.key == "m" && !w.iss)
 						toggledarkmode();
 					switch (e.key) {
 						case "ArrowUp":
 						case "w":
 							if ((c.tom[1] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!c.iss)
+								if (!w.iss)
 									c.tom = [0, -1];
 								else
-									newgame();
+									cleargame();
 								// c.hch = true;
 							}
 							break;
 						case "ArrowLeft":
 						case "a":
 							if ((c.tom[0] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!c.iss)
+								if (!w.iss)
 									c.tom = [-1, 0];
 								else
-									newgame();
+									cleargame();
 								// c.hch = true;
 							}
 							break;
 						case "ArrowDown":
 						case "s":
 							if ((c.tom[1] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!c.iss)
+								if (!w.iss)
 									c.tom = [0, 1];
 								else
-									newgame();
+									cleargame();
 								// c.hch = true;
 							}
 							break;
 						case "ArrowRight":
 						case "d":
 							if ((c.tom[0] == 0 || c.pos.length == 1) /* && !c.hch */) {
-								if (!c.iss)
+								if (!w.iss)
 									c.tom = [1, 0];
 								else
-									newgame();
+									cleargame();
 								// c.hch = true;
 							}
 							break;
@@ -195,7 +190,7 @@
 					
 					// c.hch = false;
 					// Update
-										
+					
 					var predpos = c.pos.concat([[c.pos[c.pos.length - 1][0] + c.tom[0], c.pos[c.pos.length - 1][1] + c.tom[1]]]);
 					
 					// Checks for predicted collision with food
@@ -216,7 +211,34 @@
 							snek = document.getElementById("snek");
 							snek.appendChild(sd);
 							
-							
+							w.sco += 1 + Math.floor((w.sco + 1) / 5);
+							document.getElementById("scorewrapper").querySelector("p").innerHTML = "Score: " + (w.sco);
+							w.iss = true;
+							var ws = document.createElement("div");
+							ws.setAttribute("id", "wscreen");
+							ws.style.position = "absolute";
+							ws.style.left = "0px";
+							ws.style.top = "0px";
+							ws.style.width = "100%";
+							ws.style.height = "100%";
+							ws.style.backgroundColor = "rgba(51, 51, 51, 0.75)";
+							ws.style.textAlign = "center";
+							ws.style.color = "rgba(204, 204, 204, 0.75)";
+							ws.style.fontFamily = "sans-serif";
+							ws.onclick = function() {
+								cleargame();
+							}
+							document.body.appendChild(ws);
+							var sch = document.createElement("h1");
+							sch.style.marginTop = "200px";
+							sch.style.marginBottom = "-12px";
+							sch.style.fontSize = "58px";
+							sch.innerHTML = "You've Won!";
+							ws.appendChild(sch);
+							var sci = document.createElement("p");
+							sci.style.fontSize = "18px";
+							sci.innerHTML = "Score: " + w.sco;
+							ws.appendChild(sci);
 							return;
 						}
 						// New food
@@ -240,7 +262,7 @@
 					// Checks for predicted collision will wall || predicted collision with self
 					// console.log(c.pos.slice(1, c.pos.length - 1));
 					if ((c.pos[c.pos.length - 1][0] + c.tom[0] >= w.dim || c.pos[c.pos.length - 1][0] + c.tom[0] < 0 || c.pos[c.pos.length - 1][1] + c.tom[1] >= w.dim || c.pos[c.pos.length - 1][1] + c.tom[1] < 0) || (c.pos.slice(1, c.pos.length).some(function(e) {return (e[0] == c.pos[c.pos.length - 1][0] + c.tom[0] && e[1] == c.pos[c.pos.length - 1][1] + c.tom[1]);}))) {
-						c.iss = true;
+						w.iss = true;
 						var gos = document.createElement("div");
 						gos.setAttribute("id", "goscreen");
 						gos.style.position = "absolute";
@@ -253,7 +275,7 @@
 						gos.style.color = "rgba(204, 204, 204, 0.75)";
 						gos.style.fontFamily = "sans-serif";
 						gos.onclick = function() {
-							newgame();
+							cleargame();
 						}
 						document.body.appendChild(gos);
 						var sch = document.createElement("h1");
@@ -302,15 +324,77 @@
 				if (!w.pau)
 					window.requestAnimationFrame(main);
 			}
-			function newgame() {
-				console.log("yeyehyehyeh");
+			function cleargame() {
+				if (document.getElementById("wscreen"))
+					document.body.removeChild(document.getElementById("wscreen"));
+				else
+					document.body.removeChild(document.getElementById("goscreen"));
+				c.tom = [1, 0];
+				c.pos = [[0, 0]];
+				c.gro = 0;
+				w.sco = 0;
+				w.iss = false;
+				
+				document.body.removeChild(document.getElementById("food"));
+				document.body.removeChild(document.getElementById("snek"));
+				
+				var food = document.createElement("div");
+				food.setAttribute("id", "food");
+				food.style.position = "absolute";
+				food.style.left = "50%";
+				food.style.marginLeft = "-" + ((w.csz * w.dim) / 2 - 1) + "px";
+				food.style.top = 1 + w.csz + "px";
+				food.style.width = w.csz * w.dim + "px";
+				food.style.height = w.csz * w.dim + "px";
+				document.body.appendChild(food);
+				
+				// Initial food update (not pos[0, 0]) and render
+				while (!(c.fpo[0] || c.fpo[1])) {
+					c.fpo = [Math.floor(Math.random() * w.dim), Math.floor(Math.random() * w.dim)];
+				}
+				var fd = document.createElement("div");
+				fd.style.position = "absolute";
+				fd.style.left = (c.fpo[0] * w.csz) + "px";
+				fd.style.top = (c.fpo[1] * w.csz) + "px";
+				fd.style.width = w.csz + "px";
+				fd.style.height = w.csz + "px";
+				fd.style.background = "linear-gradient(135deg, #FFF 10%, #FE0 20%, #D40 70%)";
+				fd.style.borderRadius = "50%";
+				fd.style.boxShadow = "0px 0px 16px #000";
+				food.appendChild(fd);
+				
+				var snek = document.createElement("div");
+				snek.setAttribute("id", "snek");
+				snek.style.position = "absolute";
+				snek.style.left = "50%";
+				snek.style.marginLeft = "-" + ((w.csz * w.dim) / 2 - 1) + "px";
+				snek.style.top = 1 + w.csz + "px";
+				snek.style.width = w.csz * w.dim + "px";
+				snek.style.height = w.csz * w.dim + "px";
+				// snek.style.backgroundColor = "red";
+				document.body.appendChild(snek);
+				
+				// Initial snake render
+				var sd = document.createElement("div");
+				sd.style.position = "absolute";
+				sd.style.left = (c.pos[c.pos.length - 1][0] * w.csz) + "px";
+				sd.style.top = (c.pos[c.pos.length - 1][1] * w.csz) + "px";
+				sd.style.width = w.csz + "px";
+				sd.style.height = w.csz + "px";
+				sd.style.backgroundColor = "#000";
+				sd.style.boxShadow = "0px 0px 16px #000";
+				snek.appendChild(sd);
+				
+				residue = 0;
+				last = Date.now();
+				window.requestAnimationFrame(main);
 			}
 			/* function debug(head, value) {
 				console.log("debug " + head + ": " + value);
 			} */
 			function toggledarkmode() {
-				isdankmode = !isdankmode;
-				if (isdankmode) {
+				w.idm = !w.idm;
+				if (w.idm) {
 					document.body.style.backgroundColor = "#000";
 					document.getElementById("content").style.border = "1px solid #FFF";
 					document.getElementById("darkmodebutton").value = "Light Mode";
